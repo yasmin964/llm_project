@@ -3,10 +3,9 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
-from flask import Flask
-import threading
 
-# Ваш существующий код
+from aiohttp import web
+
 from bot.admin_handlers import register_admin_handlers
 from bot.user_handlers import register_user_handlers
 
@@ -14,20 +13,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Простой Flask сервер
-app = Flask(__name__)
-
-
-@app.route('/')
-@app.route('/health')
-def health_check():
-    return "Bot is running!"
-
-
-def run_flask():
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port, debug=False)
 
 
 async def start_bot():
@@ -49,10 +34,36 @@ async def start_bot():
     await dp.start_polling(bot)
 
 
-if __name__ == "__main__":
-    # Запускаем Flask в отдельном потоке
-    flask_thread = threading.Thread(target=run_flask, daemon=True)
-    flask_thread.start()
+async def health_check(request):
+    return web.Response(text="Bot is running!")
 
-    # Запускаем бота
-    asyncio.run(start_bot())
+
+async def start_http_server():
+    app = web.Application()
+    app.router.add_get('/health', health_check)
+    app.router.add_get('/', health_check)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+
+    port = int(os.environ.get('PORT', 10000))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+
+    logger.info(f"HTTP server started on port {port}")
+    return runner
+
+
+async def main():
+    http_runner = await start_http_server()
+
+    try:
+        await start_bot()
+    except Exception as e:
+        logger.error(f"Bot error: {e}")
+    finally:
+        await http_runner.cleanup()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
