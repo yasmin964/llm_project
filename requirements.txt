@@ -9,3 +9,5 @@ faiss-cpu>=1.7.4
 pymupdf>=1.23.7
 google-genai==1.52.0
 python-dotenv>=1.0.0
+requests==2.32.5
+aiohttp==3.9.1
