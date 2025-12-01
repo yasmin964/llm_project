@@ -12,7 +12,7 @@ def load_pdf(path):
 
     for page_num in range(len(doc)):
         page = doc[page_num]
-        text += f"\n--- Page {page_num + 1} ---\n"
+        text += f"\nPage {page_num + 1} \n"
         text += page.get_text("text") + "\n"
 
     return text
@@ -64,11 +64,11 @@ def build_document_chunks(pdf_path):
         )
 
         chunks = splitter.split_text(full_text)
-        print(f"✅ Created {len(chunks)} chunks from {os.path.basename(pdf_path)}")
+        print(f" Created {len(chunks)} chunks from {os.path.basename(pdf_path)}")
         return chunks
 
     except Exception as e:
-        print(f"❌ Error processing {pdf_path}: {e}")
+        print(f"Error processing {pdf_path}: {e}")
         return []
 
 if __name__ == "__main__":

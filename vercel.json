@@ -1,0 +1,18 @@
+{
+  "functions": {
+    "api/bot.py": {
+      "runtime": "python3.10",
+      "maxDuration": 10,
+      "memory": 1024
+    }
+  },
+  "env": {
+    "PYTHON_VERSION": "3.10"
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/bot"
+    }
+  ]
+}

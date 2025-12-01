@@ -1,5 +1,4 @@
 import os
-
 from google import genai
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -26,7 +25,7 @@ STRICT RULES:
 1. Answer ONLY using information from the context above
 2. If the answer is fully in context - provide exact answer with code examples if available
 3. If answer is partially in context - answer only the part that exists in context
-4. If answer is NOT in context - say: "No information found in pandas documentation. Please check official docs: https://pandas.pydata.org/docs/"
+4. If answer is NOT in context - say: "No information found in documentation. Please check official docs (ex. https://pandas.pydata.org/docs/"
 5. DO NOT add any information not present in the context
 6. DO NOT make up code examples
 7. If context has code examples - use them exactly as provided
@@ -107,8 +106,6 @@ class RAGPipeline:
 
     def add_document(self, pdf_path):
         try:
-            from rag.build_vectorstore import build_document_chunks
-
             new_chunks = build_document_chunks(pdf_path)
 
             if self.vectorstore is None:
