@@ -18,5 +18,4 @@ def admin_menu_kb(user_id: int):
         ]
         return InlineKeyboardMarkup(inline_keyboard=admin_buttons + base_buttons)
     else:
-        # Показываем только кнопку для становления админом
         return InlineKeyboardMarkup(inline_keyboard=base_buttons)

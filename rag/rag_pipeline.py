@@ -1,12 +1,10 @@
 import os
 from google import genai
-from langchain_community.vectorstores import FAISS
+from langchain_chroma import Chroma  # ← ЗАМЕНИЛИ FAISS на Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from rag.config import GEMINI_API_KEY, VECTORSTORE_PATH, DOCS_DIR
 from rag.build_vectorstore import build_vectorstore
 from rag.build_vectorstore import build_document_chunks
-
-
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -52,12 +50,20 @@ class RAGPipeline:
 
     def load_vectorstore(self):
         try:
-            self.vectorstore = FAISS.load_local(
-                VECTORSTORE_PATH,
-                self.embedding,
-                allow_dangerous_deserialization=True
+            # Chroma загружается по директории, не по файлу
+            self.vectorstore = Chroma(
+                persist_directory=VECTORSTORE_PATH,
+                embedding_function=self.embedding
             )
             print("VectorStore loaded successfully")
+
+            # Проверяем что документы есть
+            try:
+                count = self.vectorstore._collection.count()
+                print(f"Documents in collection: {count}")
+            except:
+                print("Could not get document count")
+
         except Exception as e:
             print(f"Error loading VectorStore: {e}")
             self.vectorstore = None
@@ -73,7 +79,6 @@ class RAGPipeline:
 
     def rebuild_index(self):
         try:
-            documents_dir = "data/documents"
             pdf_files = [f for f in os.listdir(DOCS_DIR) if f.endswith('.pdf')]
 
             if not pdf_files:
@@ -86,8 +91,15 @@ class RAGPipeline:
                 chunks = build_document_chunks(pdf_path)
                 all_chunks.extend(chunks)
 
-            self.vectorstore = FAISS.from_texts(all_chunks, self.embedding)
-            self.vectorstore.save_local(VECTORSTORE_PATH)
+            import shutil
+            if os.path.exists(VECTORSTORE_PATH):
+                shutil.rmtree(VECTORSTORE_PATH)
+
+            self.vectorstore = Chroma.from_texts(
+                texts=all_chunks,
+                embedding=self.embedding,
+                persist_directory=VECTORSTORE_PATH
+            )
 
             print(f"Index rebuilt with {len(pdf_files)} documents, {len(all_chunks)} total chunks")
             return True
@@ -100,7 +112,7 @@ class RAGPipeline:
         if not self.vectorstore:
             return "No documents available. Please upload a document first."
 
-        docs = self.vectorstore.similarity_search(question, k=6)  # больше чанков
+        docs = self.vectorstore.similarity_search(question, k=6)
         context = "\n\n".join([d.page_content for d in docs])
         return ask_gemini(question, context)
 
@@ -108,13 +120,34 @@ class RAGPipeline:
         try:
             new_chunks = build_document_chunks(pdf_path)
 
-            if self.vectorstore is None:
-                self.vectorstore = FAISS.from_texts(new_chunks, self.embedding)
-            else:
-                self.vectorstore.add_texts(new_chunks)
+            if not new_chunks:
+                return False
 
-            self.vectorstore.save_local(VECTORSTORE_PATH)
-            print(f"Document added to index! Total chunks: {self.vectorstore.index.ntotal}")
+            BATCH_SIZE = 4000
+
+            if self.vectorstore is None:
+                import shutil
+                if os.path.exists(VECTORSTORE_PATH):
+                    shutil.rmtree(VECTORSTORE_PATH)
+
+                first_batch = new_chunks[:BATCH_SIZE]
+                self.vectorstore = Chroma.from_texts(
+                    texts=first_batch,
+                    embedding=self.embedding,
+                    persist_directory=VECTORSTORE_PATH
+                )
+
+                for i in range(BATCH_SIZE, len(new_chunks), BATCH_SIZE):
+                    batch = new_chunks[i:i + BATCH_SIZE]
+                    self.vectorstore.add_texts(batch)
+                    print(f"Added batch {i // BATCH_SIZE + 1}")
+            else:
+                for i in range(0, len(new_chunks), BATCH_SIZE):
+                    batch = new_chunks[i:i + BATCH_SIZE]
+                    self.vectorstore.add_texts(batch)
+                    print(f"Added batch {i // BATCH_SIZE + 1}")
+
+            print(f"Document added in {((len(new_chunks) - 1) // BATCH_SIZE + 1)} batches")
             return True
 
         except Exception as e:

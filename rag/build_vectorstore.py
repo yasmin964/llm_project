@@ -1,9 +1,10 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain_chroma import Chroma  # ← ЗАМЕНИЛИ FAISS на Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from rag.config import VECTORSTORE_PATH
 import pymupdf
 import os
+import shutil
 
 
 def load_pdf(path):
@@ -39,13 +40,21 @@ def build_vectorstore(pdf_path, vectorstore_path=VECTORSTORE_PATH):
         model_kwargs={"device": "cpu"}
     )
 
-    print("Create FAISS vectorstore...")
-    vectorstore = FAISS.from_texts(chunks, embedding)
+    print("Create ChromaDB vectorstore...")
+    if os.path.exists(vectorstore_path):
+        shutil.rmtree(vectorstore_path)
+
+    vectorstore = Chroma.from_texts(
+        texts=chunks,
+        embedding=embedding,
+        persist_directory=vectorstore_path
+    )
 
     os.makedirs(os.path.dirname(vectorstore_path), exist_ok=True)
 
-    vectorstore.save_local(vectorstore_path)
-    print(f"FAISS index saved to {vectorstore_path}!")
+    print(f"ChromaDB index saved to {vectorstore_path}!")
+    print(
+        f"Documents in collection: {vectorstore._collection.count() if hasattr(vectorstore, '_collection') else 'unknown'}")
 
     return vectorstore
 
@@ -56,9 +65,21 @@ def build_document_chunks(pdf_path):
     try:
         full_text = load_pdf(pdf_path)
 
+        text_length = len(full_text)
+        print(f" PDF size: {text_length:,} characters")
+
+        if text_length > 5_000_000:
+            chunk_size = 400
+            print("Using smaller chunk size (400) for large PDF")
+        elif text_length > 2_000_000:
+            chunk_size = 600
+            print("Using medium chunk size (600) for large PDF")
+        else:
+            chunk_size = 800
+
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=800,
-            chunk_overlap=200,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_size // 4,
             separators=["\n\n", "\n", ". ", "! ", "? ", " ", ""],
             length_function=len,
         )
@@ -70,6 +91,7 @@ def build_document_chunks(pdf_path):
     except Exception as e:
         print(f"Error processing {pdf_path}: {e}")
         return []
+
 
 if __name__ == "__main__":
     import sys

@@ -9,7 +9,7 @@ from aiohttp import web
 
 from bot.admin_handlers import register_admin_handlers
 from bot.user_handlers import register_user_handlers
-from rag.config import VECTORSTORE_PATH, DOCS_DIR
+from rag.config import DOCS_DIR
 
 import logging
 
