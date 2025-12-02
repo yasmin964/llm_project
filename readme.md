@@ -12,7 +12,7 @@ A sophisticated Telegram bot that implements Retrieval-Augmented Generation (RAG
 - **Admin Controls**: Special commands for bot management and monitoring
 
 ### Demo
-![Bot Demo](Assigi-labs_sem7/LLM/project/llm_project/demo.gif) *Add your GIF here showing:*
+![Bot Demo](imgs/demo.gif) *Add your GIF here showing:*
 - *Ask question according Python doc*
 - *Call for admin rights*
 - *Become admin*
@@ -152,7 +152,7 @@ Despite extensive optimization attempts, the project consistently fails deployme
 
 ### Error Evidence
 
-![Vercel Build Error](error.png) *Screenshot showing:*
+![Vercel Build Error](imgs/error.png) *Screenshot showing:*
 ```
 ▲ Build system report
 • At least one "Out of Memory" ("OOM") event was detected during the build
