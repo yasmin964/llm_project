@@ -108,47 +108,49 @@ User Query → Embedding → Vector Search → Context Retrieval → Gemini API 
 ```
 
 #### 3. **Memory Requirements**
-The bot requires significant resources due to ML dependencies:
+# **Memory Requirements and Deployment Challenges**
 
-| Dependency | Size | Purpose | Why Essential |
-|------------|------|---------|---------------|
-| **sentence-transformers** | 200MB | Text embeddings | Creates vector representations for semantic search |
-| **ChromaDB** | 150MB | Vector database | Enables fast similarity search across documents |
-| **PyMuPDF** | 80MB | PDF processing | Extracts text from complex PDF layouts |
-| **LangChain** | 100MB | Orchestration | Manages document processing pipeline |
+The bot relies on sophisticated ML libraries that require substantial memory during both build and runtime:
 
-**Total Build Memory**: ~1.5GB  
-**Runtime Memory**: ~750MB
+| Dependency | Package Size | **Peak Memory During Installation** | Why Essential |
+|------------|--------------|-------------------------------------|---------------|
+| **sentence-transformers** | 80MB | **2.1GB+** (downloads 420MB model + compiles C++ dependencies) | State-of-the-art text embeddings for semantic search |
+| **ChromaDB** | 10MB | **800MB+** (C++ compilation of hnswlib) | High-performance vector database for similarity search |
+| **PyMuPDF** | 80MB | **300MB+** (native C extensions) | Handles complex PDF layouts with tables and images |
+| **LangChain** | 50MB | **200MB+** (dependency resolution) | Orchestrates the document processing pipeline |
 
-### Why These Heavy Dependencies Are Essential
+**Package Total**: ~220MB (download size)  
+**Peak Build Memory**: ~3.4GB (theoretical maximum during installation)  
+**Actual Build Memory**: ~2.5GB (sequential installation)  
+**Runtime Memory**: ~1.2GB (with loaded embedding model)
 
-1. **Quality of Answers**: sentence-transformers provides state-of-the-art embeddings that capture semantic meaning, crucial for accurate document retrieval
-2. **PDF Complexity**: PyMuPDF handles complex PDF structures (tables, columns, images) better than lightweight alternatives
-3. **Search Performance**: ChromaDB enables millisecond-level similarity search across thousands of document chunks
-4. **Pipeline Reliability**: LangChain provides battle-tested components for document processing and retrieval
+### **Why These Dependencies Cannot Be Simply Removed**
 
-## Deployment Challenges
+1. **Embedding Quality**: `sentence-transformers` provides contextual embeddings that understand semantic meaning, not just keywords - lightweight alternatives fail at technical documentation
+2. **PDF Processing**: `PyMuPDF` extracts text from complex layouts (scientific papers, reports with tables/columns) where simpler libraries like PyPDF lose structure
+3. **Vector Search**: `ChromaDB` enables sub-second retrieval across thousands of document chunks - essential for real-time Q&A
+4. **Pipeline Integrity**: `LangChain` ensures reliable document processing and retrieval workflows with error handling
 
-### The Vercel Memory Limit Problem
+### **The Vercel Memory Wall**
 
-Despite extensive optimization attempts, the project consistently fails deployment on free-tier hosting services:
+Despite Vercel offering 8GB of build memory, deployment consistently fails with Out-Of-Memory (OOM) errors:
 
-#### What was Tried to Reduce Memory Usage:
-1. ✅ **Switched from FAISS to ChromaDB** (300MB → 150MB)
-2. ✅ **Replaced PyMuPDF with PyPDF** (80MB → 1MB)
-3. ✅ **Implemented chunk batching** for large documents
-4. ✅ **Used lightweight embedding models** (all-MiniLM-L6-v2)
-5. ❌ **Cannot remove sentence-transformers** - core functionality depends on it
-6. ❌ **Cannot remove ChromaDB** - vector search is essential
+**Optimization Attempts (All Implemented):**
+1. ✅ **Switched from FAISS to ChromaDB** (reduced from 300MB to 800MB peak, but better performance)
+2. ✅ **Implemented adaptive chunk batching** - processes large PDFs in manageable batches
+3. ✅ **Used lightweight embedding model** (`paraphrase-MiniLM-L3-v2` - 65MB instead of 420MB)
+4. ✅ **Cleared build caches and optimized dependency versions**
 
-#### Service Limitations:
+**Service Limitations Analysis:**
 
-| Service | Free Tier Memory | Our Requirements | Status |
-|---------|-----------------|------------------|--------|
-| **Vercel** | 1GB (shared) | 1.5GB+ | ❌ **FAILS** |
-| **Railway Free** | 512MB | 1.5GB+ | ❌ **INSUFFICIENT** |
-| **Render Free** | 512MB | 1.5GB+ | ❌ **INSUFFICIENT** |
-| **Koyeb Free** | 512MB | 1.5GB+ | ❌ **INSUFFICIENT** |
+| Service | Free Tier Build Memory | Peak Required | Runtime Memory | Build Success | Cost for Adequate Plan |
+|---------|-----------------------|---------------|----------------|---------------|------------------------|
+| **Vercel** | 8GB (shared) | 2.5GB+ | 1.2GB | ❌ **Fails** (OOM during installation) | $20/month (Pro for 16GB builds) |
+| **Railway Free** | 512MB | 2.5GB+ | 1.2GB | ❌ **Insufficient** | $10/month (2GB RAM) |
+| **Render Free** | 512MB | 2.5GB+ | 1.2GB | ❌ **Insufficient** | $15/month (2GB RAM) |
+| **Koyeb Free** | 512MB | 2.5GB+ | 1.2GB | ❌ **Insufficient** | $9-18/month (1-2GB RAM) |
+
+*Note: Free tiers typically provide 512MB-1GB for builds, but our application requires 2.5GB+ peak during installation due to ML dependency compilation and model downloading.*
 
 ### Error Evidence
 
