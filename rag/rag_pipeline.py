@@ -1,8 +1,8 @@
 import os
 from google import genai
-from langchain_chroma import Chroma  # ← ЗАМЕНИЛИ FAISS на Chroma
+from langchain_chroma import Chroma  
 from langchain_huggingface import HuggingFaceEmbeddings
-from rag.config import GEMINI_API_KEY, VECTORSTORE_PATH, DOCS_DIR
+from rag.config import GEMINI_API_KEY, VECTORSTORE_PATH, DOCS_DIR, EMBEDDING_MODEL
 from rag.build_vectorstore import build_vectorstore
 from rag.build_vectorstore import build_document_chunks
 
@@ -43,21 +43,19 @@ class RAGPipeline:
     def __init__(self):
         self.vectorstore = None
         self.embedding = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_name=EMBEDDING_MODEL,
             model_kwargs={"device": "cpu"}
         )
         self.load_vectorstore()
 
     def load_vectorstore(self):
         try:
-            # Chroma загружается по директории, не по файлу
             self.vectorstore = Chroma(
                 persist_directory=VECTORSTORE_PATH,
                 embedding_function=self.embedding
             )
             print("VectorStore loaded successfully")
 
-            # Проверяем что документы есть
             try:
                 count = self.vectorstore._collection.count()
                 print(f"Documents in collection: {count}")

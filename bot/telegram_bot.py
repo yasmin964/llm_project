@@ -153,7 +153,6 @@ if __name__ == "__main__":
     elif use_webhook:
         print("Setting up webhook for Vercel...")
 
-
         async def main_set_webhook():
             success = await set_webhook_url()
             if success:
@@ -161,8 +160,6 @@ if __name__ == "__main__":
                 print("Bot is running on Vercel with webhook")
             else:
                 print("Failed to set webhook")
-                print("Please set VERCEL_URL environment variable")
-
 
         asyncio.run(main_set_webhook())
 

@@ -1,7 +1,7 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma  # ← ЗАМЕНИЛИ FAISS на Chroma
+from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
-from rag.config import VECTORSTORE_PATH
+from rag.config import VECTORSTORE_PATH, EMBEDDING_MODEL
 import pymupdf
 import os
 import shutil
@@ -36,7 +36,7 @@ def build_vectorstore(pdf_path, vectorstore_path=VECTORSTORE_PATH):
 
     print("Create embeddings...")
     embedding = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_name=EMBEDDING_MODEL,
         model_kwargs={"device": "cpu"}
     )
 
@@ -85,7 +85,7 @@ def build_document_chunks(pdf_path):
         )
 
         chunks = splitter.split_text(full_text)
-        print(f" Created {len(chunks)} chunks from {os.path.basename(pdf_path)}")
+        print(f"Created {len(chunks)} chunks from {os.path.basename(pdf_path)}")
         return chunks
 
     except Exception as e:

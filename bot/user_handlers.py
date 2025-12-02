@@ -14,7 +14,7 @@ def register_user_handlers(dp):
     @router.message(Command("start"))
     async def start(message: Message):
         await message.answer(
-            "Hi! I'm a RAG-bot. You can ask me questions about any Pandas documentation!"
+            "Hi! I'm a RAG-bot. You can ask me questions about Python documentation!"
         )
 
     #  USER QUERY

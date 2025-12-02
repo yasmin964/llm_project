@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+EMBEDDING_MODEL = "sentence-transformers/paraphrase-MiniLM-L3-v2"
 
 if os.environ.get('KOYEB'):
     VECTORSTORE_PATH = "/tmp/chroma_db"

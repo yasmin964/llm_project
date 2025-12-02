@@ -11,7 +11,7 @@ async def main():
     vercel_url = os.getenv("VERCEL_URL")
     if not vercel_url:
         print("ERROR: VERCEL_URL not set in environment")
-        vercel_url = input("Enter your Vercel app URL (e.g., https://your-app.vercel.app): ").strip()
+        vercel_url = input("Vercel app URL (e.g., https://your-app.vercel.app): ").strip()
         if vercel_url:
             os.environ["VERCEL_URL"] = vercel_url
 
