@@ -12,7 +12,7 @@ A sophisticated Telegram bot that implements Retrieval-Augmented Generation (RAG
 - **Admin Controls**: Special commands for bot management and monitoring
 
 ### Demo
-![Bot Demo](imgs/demo.gif) *Add your GIF here showing:*
+![Bot Demo](imgs/demo.gif)
 - *Ask question according Python doc*
 - *Call for admin rights*
 - *Become admin*
